@@ -23,7 +23,7 @@ from torch.utils.tensorboard import SummaryWriter
 from bindsnet import ROOT_DIR
 from bindsnet.datasets import MNIST, FashionMNIST, DataLoader
 from bindsnet.encoding import PoissonEncoder
-from cusmodels import DiehlAndCook2015v9_Weight_Sum_Dependent_Divergence, DiehlAndCook2015v9_Weight_Sum_Dependent_Divergence_CIFAR
+from A_STDP_models import DiehlAndCook2015v9_Weight_Sum_Dependent_Divergence, DiehlAndCook2015v9_Weight_Sum_Dependent_Divergence_CIFAR
 from bindsnet.network.monitors import Monitor
 from bindsnet.utils import get_square_weights
 from bindsnet.analysis.plotting import plot_spikes, plot_weights

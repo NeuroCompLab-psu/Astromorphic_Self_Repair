@@ -5,7 +5,7 @@ import torch
 import numpy as np
 
 from bindsnet.network.nodes import SRM0Nodes
-from custopology import (
+from A_STDP_topology import (
     AbstractConnection,
     Connection,
     WeightMemorizingConnection,

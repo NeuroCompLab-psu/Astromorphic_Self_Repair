@@ -56,7 +56,7 @@ class AbstractConnection(ABC, Module):
         self.weight_decay = weight_decay
         self.reduction = reduction
 
-        from cuslearning import NoOp
+        from A_STDP_learning import NoOp
 
         self.update_rule = kwargs.get("update_rule", NoOp)
         self.wmin = kwargs.get("wmin", -np.inf)

@@ -7,10 +7,10 @@ from torch.nn.modules.utils import _pair
 import torch.nn as nn
 from torchvision import models
 
-from cuslearning import PostPre, WeightSumDependentDivergencePostPre, LearningRule
+from A_STDP_learning import PostPre, WeightSumDependentDivergencePostPre, LearningRule
 from bindsnet.network import Network
 from bindsnet.network.nodes import Input, LIFNodes, DiehlAndCookNodes
-from custopology import Connection, WeightMemorizingConnection, LocalConnection
+from A_STDP_topology import Connection, WeightMemorizingConnection, LocalConnection
 
 class DiehlAndCook2015v2(Network):
     # language=rst
