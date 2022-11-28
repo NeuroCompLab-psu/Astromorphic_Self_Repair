@@ -19,7 +19,7 @@ Run the script **A_STDP_Self_Repair_main.py** with the following formulas for Fa
 
 ### MNSIT Dataset
 ```
-python ./DR_WSSTDP_stktz.py
+python ./A_STDP_Self_Repair_main.py
 --log-dir
 --seed
 --n-neurons
