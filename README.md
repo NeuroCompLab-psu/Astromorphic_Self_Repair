@@ -2,7 +2,7 @@
 
 ## Overview
 
-This codebase contains a simulation of the astrocyte-guided self-repair algorithm of Spike-Timing-Dependent Plasticity (STDP) network running on neuromorphic hardware. The astromorphic STDP self-repair learning rule is extracted from the dynamics of intereaction between a group of neurons and a neighboring astrocyte. When there are faults, for example weight decay or conductance stuck to zero, in the crossbar array system for a STDP network, the network accuracy will degenerate. The proposed algorithm can restore the system accuracy to a reasonable level based on the information remaining in the healthy synapses. Here the STDP network implementation is from 
+This codebase contains a simulation of the astrocyte-guided self-repair algorithm of Spike-Timing-Dependent Plasticity (STDP) network running on neuromorphic hardware. The astromorphic STDP self-repair learning rule is extracted from the dynamics of intereaction between a group of neurons and a neighboring astrocyte. When there are faults, for example weight decay or conductance stuck to zero, in the crossbar array system for a STDP network, the network accuracy will degenerate. The proposed algorithm can restore the system accuracy to a reasonable level based on the information remaining in the healthy synapses. Here the STDP network implementation is from [BindsNET](https://github.com/BindsNET/bindsnet).
 
 ## Package Requiremnts
 
