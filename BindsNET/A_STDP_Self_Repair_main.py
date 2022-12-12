@@ -23,7 +23,7 @@ from torch.utils.tensorboard import SummaryWriter
 from bindsnet import ROOT_DIR
 from bindsnet.datasets import MNIST, FashionMNIST, DataLoader
 from bindsnet.encoding import PoissonEncoder
-from A_STDP_models import DiehlAndCook2015v9_Weight_Sum_Dependent_Divergence, DiehlAndCook2015v9_Weight_Sum_Dependent_Divergence_CIFAR
+from A_STDP_models import DiehlAndCook2015v2_A_STDP
 from bindsnet.network.monitors import Monitor
 from bindsnet.utils import get_square_weights
 from bindsnet.analysis.plotting import plot_spikes, plot_weights
@@ -33,6 +33,14 @@ import seaborn as sns
 import PIL.Image
 from torchvision.transforms import ToTensor
 from typing import Union
+from collections import OrderedDict
+
+
+def save_weight_theta(_network: Network, _path: str):
+    weight_theta = OrderedDict()
+    weight_theta['weight'] = _network.X_to_Y.w.data
+    weight_theta['theta'] = _network.Y.theta.data
+    torch.save(weight_theta, _path)
 
 def decay_ratio(size, t, v_mean, v_sigma, gpu):
     if gpu:
@@ -183,6 +191,8 @@ def main(args):
 
     n_sqrt = int(np.ceil(np.sqrt(args.n_neurons)))
 
+    # argument checking
+
     if args.reduction == "sum":
         reduction = torch.sum
     elif args.reduction == "mean":
@@ -190,39 +200,34 @@ def main(args):
     else:
         raise NotImplementedError
     
-    if args.FMNIST:
-        args.log_dir += "/DR_FashionMNIST_WSSTDP_stktz__n_neurons_{}_time_{}_batch_size_{}_prob_{}_weight_max_{}_tau_{}_kdiv_{}_bdiv_{}_eq_step_{}_sum_lowerbound_{}_intensity_{}_inh_{}_nu_({},{})_sobel_{}/". \
-            format(args.n_neurons,
-                args.time,
-                args.batch_size,
-                args.prob,
-                args.weight_max,
-                args.tau,
-                args.kdiv,
-                args.bdiv,
-                args.eq_step,
-                args.sum_lowerbound,
-                args.intensity,
-                args.inh,
-                args.nu_pre,
-                args.nu_post,
-                args.sobel
-                )
-    else:
-        args.log_dir += "/DR_MNIST_WSSTDP_stktz__n_neurons_{}_time_{}_batch_size_{}_prob_{}_weight_max_{}_t_norm_{}_v_mean_{}_v_sigma_{}_tau_{}_kdiv_{}_bdiv_{}_eq_step_{}_sum_lowerbound_{}/". \
-            format(args.n_neurons,
-                args.time,
-                args.batch_size,
-                args.prob,
-                args.weight_max,
-                args.t_norm,
-                args.v_mean,
-                args.v_sigma,
-                args.tau,
-                args.kdiv,
-                args.bdiv,
-                args.eq_step,
-                args.sum_lowerbound)
+    if (args.dataset != "MNIST") and (args.dataset != "FMNIST"):
+        print("dataset is {}".format(args.dataset))
+        raise ArgumentError("dataset must be MNIST or FMNIST!")
+    
+    args.log_dir += "/data_{}_pf_{}_vfau_({},{})_tfau_{}_tau_{}_eqs_{}_sumlo_{}_n_{}_dt_{}_t_{}_bs_{}_inh_{}_tplus_{}_int_{}_wm_{}_nu_({},{})_th_{}_sob_{}/". \
+        format(
+            args.dataset,
+            args.pfault,
+            args.v_mean,
+            args.v_sigma,
+            args.t_norm,
+            args.tau,
+            args.eq_step,
+            args.sum_lowerbound,
+            args.n_neurons,
+            args.dt,
+            args.time,
+            args.batch_size,
+            args.inh,
+            args.theta_plus,
+            args.intensity,
+            args.weight_max,
+            args.nu_pre,
+            args.nu_post,
+            args.thresh,
+            args.sobel,  
+            )
+
 
     run_count = 0
     log_dir_run = args.log_dir + f'run_{run_count}'
@@ -235,7 +240,7 @@ def main(args):
 
     abs_log_dir = str(os.path.abspath(args.log_dir))
 
-    if not os.path.exists(abs_log_dir) and args.network_file_save:
+    if not os.path.exists(abs_log_dir):
         os.makedirs(abs_log_dir)
     
     run_id = str(uuid.uuid4())
@@ -246,67 +251,47 @@ def main(args):
     save_path = args.log_dir + "/weights"
     save_path = str(os.path.abspath(save_path))
 
-    if not os.path.exists(save_path) and args.network_file_save:
+    if not os.path.exists(save_path):
         os.mkdir(save_path)
 
     save_path += "/"
 
     recorder = open(args.log_dir + "/accrec.csv", 'w')
+    recorder.write("Global step")
+    recorder.write(',')
+    recorder.write('Test accuracy')
+    recorder.write(',')
+    recorder.write('Average number of spike')
+    recorder.write('\n')
 
    #########################################################################
    #########################################################################
    #########################################################################
 
-    if args.FMNIST:
-        network = DiehlAndCook2015v9_Weight_Sum_Dependent_Divergence_CIFAR(
-            n_inpt=784,
-            n_neurons=args.n_neurons,
-            inh=args.inh,
-            dt=args.dt,
-            norm=None,
-            nu=(args.nu_pre, args.nu_post),
-            reduction=reduction,
-            theta_plus=args.theta_plus,
-            inpt_shape=(1, 28, 28),
-            p=args.prob,
-            wmax=args.weight_max,
-            tau=args.tau,
-            kdiv=args.kdiv,
-            bdiv=args.bdiv,
-            learning_rule=args.learning_rule,
-            thresh = args.thresh,
-            w_initial=args.w_initial,
-        )
-    else:
-        network = DiehlAndCook2015v9_Weight_Sum_Dependent_Divergence(
-            n_inpt=784,
-            n_neurons=args.n_neurons,
-            inh=args.inh,
-            dt=args.dt,
-            norm=None,
-            nu=(1e-4, 1e-2),
-            reduction=reduction,
-            theta_plus=args.theta_plus,
-            inpt_shape=(1, 28, 28),
-            tau=args.tau,
-            kdiv=args.kdiv,
-            bdiv=args.bdiv,
-            p=args.prob,
-            wmax=args.weight_max
-        )
+    network = DiehlAndCook2015v2_A_STDP(
+        n_inpt=784,
+        n_neurons=args.n_neurons,
+        inh=args.inh,
+        dt=args.dt,
+        nu=(args.nu_pre, args.nu_post),
+        reduction=reduction,
+        wmax=args.weight_max,
+        norm=None,
+        theta_plus=args.theta_plus,
+        tc_theta_decay=args.tc_theta_decay,
+        inpt_shape=(1, 28, 28),
+        pfault=args.pfault,
+        tau=args.tau,
+        thresh = args.thresh,
+    )
 
     if args.network_file_load:
         print("=>Loading Pretrained Model from {}...........".format(args.network_file_load))
-        trained_network = load(args.network_file_load)
-        # LOAD parameters manually
-
-        for state in trained_network.state_dict().keys():
-            try:
-                if "weight_mask" in state:
-                    continue
-                network.state_dict()[state].data[:] = trained_network.state_dict()[state].data
-            except:
-                pass
+        trained_weight_theta = load(args.network_file_load)
+        
+        network.X_to_Y.w.data[:] = trained_weight_theta['weight']
+        network.Y.theta.data[:] = trained_weight_theta['theta']
+        print("=>Successfully loaded.")
 
     # Directs network to GPU.
     if args.gpu:
@@ -326,7 +311,7 @@ def main(args):
 
 
 
-    if args.FMNIST:
+    if args.dataset == "FMNIST":
         # Load FashionMNIST data.
         train_dataset_for_train = FashionMNIST(
             PoissonEncoder(time=args.time, dt=args.dt),
@@ -509,9 +494,10 @@ def main(args):
                                 n_classes, 
                                 args.gpu)
     
-    save_path_f = save_path + "After_fault_injection_{:.2f}.pt".format(test_acc)
-    print("After fault injection ACC : {:.2f}".format(test_acc))
-    network.save(save_path_f)
+    if args.network_param_save:
+        save_path_f = save_path + "After_fault_injection_{:.2f}.pt".format(test_acc)
+        print("After fault injection ACC : {:.2f}".format(test_acc))
+        save_weight_theta(network, save_path_f)
 
 
     ##################################################################################
@@ -533,9 +519,10 @@ def main(args):
                                 n_classes, 
                                 args.gpu)
     
-    save_path_f = save_path + "After_normalization_{:.2f}.pt".format(test_acc)
-    print("After normalization ACC : {:.2f}".format(test_acc))
-    network.save(save_path_f)
+    if args.network_param_save:
+        save_path_f = save_path + "After_normalization_{:.2f}.pt".format(test_acc)
+        print("After normalization ACC : {:.2f}".format(test_acc))
+        save_weight_theta(network, save_path_f)
 
     # recover weight just after fault injection
     network.state_dict()["X_to_Y.w"].data[:] = w / 78.4 * sum_w
@@ -586,7 +573,7 @@ def main(args):
 
                     network.state_dict()["X_to_Y.w"].data[:] = w
 
-            # test if hitting update intervals  -----------------------------------------
+            # test if reaching update intervals  -----------------------------------------
             if step % args.update_steps == 0:
                 # Disable learning.
                 network.train(False)
@@ -597,15 +584,9 @@ def main(args):
                     spikes[layer] = Monitor(network.layers[layer], state_vars=["s"], time=args.test_time)
                     network.add_monitor(spikes[layer], name="%s_spikes" % layer)
 
-                # print weights statistics
+                # print weights sum mean
                 w1 = network.connections[('X','Y')].w
-
-                wsumsorted, idxwsum = torch.sort(w1.sum(0), descending=True)
-                print(wsumsorted.flatten().cpu().numpy())
-                # print(idxwsum.flatten().cpu().numpy())
-                
-                theta = network.state_dict()["Y.theta"]
-                # print(theta.flatten().cpu().numpy())
+                print("Mean of neuron-wide sum of weights : {}".format(w1.sum(0).mean().cpu().numpy()))
 
                 # test once
                 test_acc, assignments, ave_spk = doOneAccuracyTest(network, 
@@ -620,9 +601,10 @@ def main(args):
                 if test_acc > best_acc:
                     if global_step != 0:
                         best_acc = test_acc
-                    save_path_f = save_path + "global_step_{}_test_acc_{:.2f}.pt".format(global_step, test_acc)
-                    print("ACC : {:.2f}".format(test_acc))
-                    network.save(save_path_f)
+                    print("Test accuracy : {:.2f}".format(test_acc))
+                    if args.network_param_save:
+                        save_path_f = save_path + "global_step_{}_test_acc_{:.2f}.wt".format(global_step, test_acc)
+                        save_weight_theta(network, save_path_f)
 
                 recorder.write(str(global_step))
                 recorder.write(',')
@@ -647,14 +629,12 @@ def main(args):
             if args.gpu:
                 inpts = {k: v.cuda() for k, v in inpts.items()}
 
-            # Run the network on the input (training mode).
-            t0 = time()
+            # Run the network
             network.run(inputs=inpts, time=args.time, one_step=args.one_step)
-            t1 = time() - t0
 
             s = network.monitors['Y_spikes'].get("s").permute((1, 0, 2))
             maxspikecount = s.sum(0).max()
-            print(f"  max#spk  {maxspikecount.cpu().numpy()}")
+            print(f"  max # of spikes {maxspikecount.cpu().numpy()}")
 
 
             # Reset state variables.
@@ -663,7 +643,7 @@ def main(args):
 
 
 
-    # save weights after at the end of last epoch
+    # save weights after the end of last epoch
     
     # Disable learning.
     network.train(False)
@@ -683,10 +663,10 @@ def main(args):
                                 n_classes, 
                                 args.gpu)
     
-    save_path_f = save_path + "global_step_{}_test_acc_{:.2f}.pt".format(global_step, test_acc)
-    network.save(save_path_f)
-    # assignment_path = save_path + "global_step_{}_assignment.pt".format(global_step)
-    # torch.save(assignments, assignment_path)
+    if args.network_param_save:
+        save_path_f = save_path + "global_step_{}_test_acc_{:.2f}.wt".format(global_step, test_acc)
+        save_weight_theta(network, save_path_f)
+
     recorder.write(str(global_step))
     recorder.write(',')
     recorder.write(f'{test_acc:.2f}')
@@ -699,45 +679,48 @@ def main(args):
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--log-dir", type=str, required=True)
-    parser.add_argument("--FMNIST", action="store_true")
-    parser.add_argument("--network-file-load", type=str, default=None)
-    parser.add_argument("--network-file-save", action="store_true")
-    parser.add_argument("--v-mean", type=float, default=1.0)
-    parser.add_argument("--v-sigma", type=float, default=0.2258)
-    parser.add_argument("--t-norm", type=float, default=1e4)
-    parser.add_argument("--prob", type=float, default=0.0)
-    parser.add_argument("--seed", type=int, default=0)
-    parser.add_argument("--n-neurons", type=int, default=100)
-    parser.add_argument("--batch-size", type=int, default=16)
-    parser.add_argument("--test-batch-size", type=int, default=250)
-    parser.add_argument("--reduction", type=str, default="sum")
-    parser.add_argument("--n-epochs", type=int, default=1)
-    parser.add_argument("--n-workers", type=int, default=-1)
-    parser.add_argument("--update-steps", type=int, default=25)
-    parser.add_argument("--inh", type=float, default=120)
-    parser.add_argument("--theta-plus", type=float, default=0.05)
-    parser.add_argument("--time", type=int, default=100)
-    parser.add_argument("--test-time", type=int, default=100)
+
+    # STDP network parameter arguments
+    parser.add_argument("--network-file-load", type=str, required=True)
+    parser.add_argument("--dataset", type=str, required=True)
+    parser.add_argument("--n-neurons", type=int, required=True)
+    parser.add_argument("--time", type=int, required=True)
+    parser.add_argument("--test-time", type=int, required=True)
+    parser.add_argument("--batch-size", type=int, required=True)
+    parser.add_argument("--test-batch-size", type=int, required=True)
     parser.add_argument("--dt", type=int, default=1.0)
-    parser.add_argument("--intensity", type=float, default=128)
-    parser.add_argument("--progress-interval", type=int, default=10)
-    parser.add_argument("--gpu", action="store_true")
-    parser.add_argument("--one-step", action="store_true")
-    parser.add_argument("--weight-max", type=float, default=1.0)
+    parser.add_argument("--seed", type=int, default=0)
+    parser.add_argument("--reduction", type=str, default="sum")
+    parser.add_argument("--inh", type=float, required=True)
+    parser.add_argument("--theta-plus", type=float, required=True)
+    parser.add_argument("--tc-theta-decay", type=float, required=True)
+    parser.add_argument("--intensity", type=float, required=True)
+    parser.add_argument("--weight-max", type=float, required=True)
+    parser.add_argument("--nu-pre", type=float, required=True)
+    parser.add_argument("--nu-post", type=float, required=True)
+    parser.add_argument("--thresh", type=float, required=True)
     parser.add_argument("--sobel", action="store_true")
-    parser.add_argument("--nu-pre", type=float, default=1e-4)
-    parser.add_argument("--nu-post", type=float, default=1e-2)
-    parser.add_argument("--w-initial", type=float, default=0.3)
-    parser.add_argument("--learning-rule", type=str, default="PostPre")
-    parser.add_argument("--alpha", type=float, default=1.0)
-    parser.add_argument("--sigma", type=float, default=1.0)
-    parser.add_argument("--thresh", type=float, default=-52.0)
-    parser.add_argument("--tau", type=float, default=1.0)
-    parser.add_argument("--kdiv", type=float, default=0.0)
-    parser.add_argument("--bdiv", type=float, default=0.0)
-    parser.add_argument("--eq-step", type=int, default=-1)
-    parser.add_argument("--sum-lowerbound", type=float, default=-1.0)
+    parser.add_argument("--one-step", action="store_true")
+
+    # Fault arguments
+    parser.add_argument("--pfault", type=float, required=True)
+    parser.add_argument("--v-mean", type=float, required=True)
+    parser.add_argument("--v-sigma", type=float, required=True)
+    parser.add_argument("--t-norm", type=float, required=True)
+    
+    # self-repair parameter arguments
+    parser.add_argument("--tau", type=float, required=True)
+    parser.add_argument("--eq-step", type=int, required=True)
+    parser.add_argument("--sum-lowerbound", type=float, required=True)
+    parser.add_argument("--n-epochs", type=int, required=True)
+    parser.add_argument("--update-steps", type=int, default=250)
+    
+    # script behavior arguments
+    parser.add_argument("--log-dir", type=str, required=True)
+    parser.add_argument("--network-param-save", action="store_true")
+    parser.add_argument("--n-workers", type=int, default=-1)
+    parser.add_argument("--gpu", action="store_true")
+
     return parser.parse_args()
 
 
