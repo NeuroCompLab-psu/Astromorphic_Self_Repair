@@ -1,13 +1,11 @@
 from abc import ABC, abstractmethod
 from typing import Union, Tuple, Optional, Sequence
-
 import numpy as np
 import torch
 from torch.nn import Module, Parameter
 import torch.nn.functional as F
 from torch.nn.modules.utils import _pair
 from bindsnet.network.nodes import Nodes
-
 from bindsnet.network.topology import AbstractConnection
 
 class WeightMemorizingConnection(AbstractConnection):
@@ -89,4 +87,8 @@ class WeightMemorizingConnection(AbstractConnection):
         super().reset_state_variables()
 
     def weight_snapshot(self) -> None:
+        # language=rst
+        """
+        Store current weight as w0 for future use
+        """
         self.w0 = torch.clone(self.w)

@@ -1,18 +1,15 @@
 from typing import Optional, Union, Tuple, List, Sequence, Iterable
-
 import numpy as np
 import torch
 from scipy.spatial.distance import euclidean
 from torch.nn.modules.utils import _pair
 import torch.nn as nn
 from torchvision import models
-
 from bindsnet.learning.learning import PostPre, LearningRule
-from A_STDP_learning import A_STDP_PostPre
-
 from bindsnet.network import Network
 from bindsnet.network.nodes import Input, LIFNodes, DiehlAndCookNodes
 from bindsnet.network.topology import Connection, LocalConnection
+from A_STDP_learning import A_STDP_PostPre
 from A_STDP_topology import WeightMemorizingConnection
 
 class DiehlAndCook2015v2_A_STDP(Network):

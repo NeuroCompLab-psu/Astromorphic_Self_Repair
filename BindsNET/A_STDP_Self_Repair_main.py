@@ -19,7 +19,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib import cm
 from torchvision import transforms
-from torch.utils.tensorboard import SummaryWriter
 from bindsnet import ROOT_DIR
 from bindsnet.datasets import MNIST, FashionMNIST, DataLoader
 from bindsnet.encoding import PoissonEncoder
@@ -35,13 +34,14 @@ from torchvision.transforms import ToTensor
 from typing import Union
 from collections import OrderedDict
 
-
+# Save a set of weight to log folder
 def save_weight_theta(_network: Network, _path: str):
     weight_theta = OrderedDict()
     weight_theta['weight'] = _network.X_to_Y.w.data
     weight_theta['theta'] = _network.Y.theta.data
     torch.save(weight_theta, _path)
 
+# Weight decay mask generator
 def decay_ratio(size, t, v_mean, v_sigma, gpu):
     if gpu:
         v = torch.normal(v_mean, v_sigma, size=size, device=torch.device('cuda'))
@@ -50,7 +50,7 @@ def decay_ratio(size, t, v_mean, v_sigma, gpu):
     
     return torch.pow(t, -v)
 
-# sobel filter
+# Sobel filter
 def sobel(x):
     '''
     Whitening and sharpening of data
@@ -70,12 +70,11 @@ def sobel(x):
     sobel_op = nn.Sequential(sobel_filter)
     for p in sobel_op.parameters():
         p.requires_grad = False
-    # print(sobel_op)
     g = sobel_op(x.unsqueeze_(0)).squeeze_(0)
-
     g = torch.sqrt(g.mul(g).sum(0))
     return g.unsqueeze_(0)
 
+# Test the accuracy of a network
 def doOneAccuracyTest(
     network: Network, 
     batches1: list,
@@ -86,15 +85,15 @@ def doOneAccuracyTest(
     gpu: bool
 ) -> torch.Tensor:
 
-    # set norm to None
+    # Set norm to None
     norm_ori = network.connections[('X','Y')].norm
     network.connections[('X','Y')].norm = None
 
-    # assignement -------------------------------------------------------
+    # Assignement -------------------------------------------------------
 
-    # label vector
+    # Label vector
     train_labels = []
-    # spike record vector (num_sample, time, num_neuron)
+    # Spike record vector (num_sample, time, num_neuron)
     train_spike_record = torch.zeros(60000, time, network.n_neurons)
 
     network.reset_state_variables()
@@ -126,11 +125,11 @@ def doOneAccuracyTest(
     n_labels=n_classes
     )
 
-    # inference -------------------------------------------------------
+    # Inference -------------------------------------------------------
 
-    # label vector
+    # Label vector
     test_labels = []
-    # spike record vector (num_sample, time, num_neuron)
+    # Spike record vector (num_sample, time, num_neuron)
     test_spike_record = torch.zeros(10000, time, network.n_neurons)
 
     network.reset_state_variables()
@@ -166,7 +165,7 @@ def doOneAccuracyTest(
 
     ave_out_spk = test_spike_record.sum() / 10000
 
-    # set norm to original value
+    # Set norm to original value
     network.connections[('X','Y')].norm = norm_ori
 
     return test_acc, train_assignments, ave_out_spk
@@ -174,7 +173,7 @@ def doOneAccuracyTest(
 ####################################
 ####################################
 ####################################
-
+# main function
 def main(args):
     update_interval = args.update_steps * args.batch_size
 
@@ -191,8 +190,7 @@ def main(args):
 
     n_sqrt = int(np.ceil(np.sqrt(args.n_neurons)))
 
-    # argument checking
-
+    # Argument checking
     if args.reduction == "sum":
         reduction = torch.sum
     elif args.reduction == "mean":
@@ -202,8 +200,9 @@ def main(args):
     
     if (args.dataset != "MNIST") and (args.dataset != "FMNIST"):
         print("dataset is {}".format(args.dataset))
-        raise ValueError("dataset must be MNIST or FMNIST!")
+        raise ValueError("dataset must be MNIST or FMNIST !")
     
+    # Generate log folder name
     args.log_dir += "/data_{}_pf_{}_vfau_({},{})_tfau_{}_tau_{}_eqs_{}_sumlo_{}_n_{}_dt_{}_t_{}_bs_{}_inh_{}_tplus_{}_int_{}_wm_{}_nu_({},{})_th_{}_sob_{}/". \
         format(
             args.dataset,
@@ -228,21 +227,18 @@ def main(args):
             args.sobel,  
             )
 
-
+    # Create log folder at specified path
     run_count = 0
     log_dir_run = args.log_dir + f'run_{run_count}'
-
     while os.path.isdir(log_dir_run):
         run_count += 1
         log_dir_run = args.log_dir + f'run_{run_count}/'
-
     args.log_dir = log_dir_run
-
     abs_log_dir = str(os.path.abspath(args.log_dir))
-
     if not os.path.exists(abs_log_dir):
         os.makedirs(abs_log_dir)
     
+    # Create runID folder in log folder
     run_id = str(uuid.uuid4())
     os.makedirs(abs_log_dir + "/_" + run_id)
 
@@ -255,7 +251,8 @@ def main(args):
         os.mkdir(save_path)
 
     save_path += "/"
-
+    
+    # create a cvs file recording accuracy and number of spike
     recorder = open(args.log_dir + "/accrec.csv", 'w')
     recorder.write("Global step")
     recorder.write(',')
@@ -264,10 +261,11 @@ def main(args):
     recorder.write('Average number of spike')
     recorder.write('\n')
 
-   #########################################################################
-   #########################################################################
-   #########################################################################
+    ####################################
+    ####################################
+    ####################################
 
+    # Initialize network class
     network = DiehlAndCook2015v2_A_STDP(
         n_inpt=784,
         n_neurons=args.n_neurons,
@@ -284,33 +282,20 @@ def main(args):
         tau=args.tau,
         thresh = args.thresh,
     )
-
+    
+    # Load uncorrupted weight file
     if args.network_file_load:
         print("=>Loading Pretrained Model from {}...........".format(args.network_file_load))
         trained_weight_theta = load(args.network_file_load)
-        
         network.X_to_Y.w.data[:] = trained_weight_theta['weight']
         network.Y.theta.data[:] = trained_weight_theta['theta']
-        print("=>Successfully loaded.")
+        print("=>Loaded successfully .")
 
     # Directs network to GPU.
     if args.gpu:
         network.to("cuda")
 
-    # Take weight snapshot
-    network.connections[('X','Y')].weight_snapshot()
-    
-    # weight decay
-    w = network.state_dict()["X_to_Y.w"]
-    healthy_mean_sum = w.sum(0).mean(0)
-    dr = decay_ratio(w.size(), args.t_norm, args.v_mean, args.v_sigma, args.gpu)
-    w = w * dr
-    w = w * network.connections[('X','Y')].weight_mask
-    network.state_dict()["X_to_Y.w"].data[:] = w
-
-
-
-
+    # Create dataset classes
     if args.dataset == "FMNIST":
         # Load FashionMNIST data.
         train_dataset_for_train = FashionMNIST(
@@ -346,7 +331,7 @@ def main(args):
             ),
         )
 
-        # add sobel filter if sobel is True
+        # Add sobel filter if sobel is True
         if args.sobel:
             train_dataset_for_train = FashionMNIST(
                 PoissonEncoder(time=args.time, dt=args.dt),
@@ -425,6 +410,7 @@ def main(args):
             ),
         )
 
+    # Create dataloaders
     train_dataloader = DataLoader(
             dataset=train_dataset_for_train,
             batch_size=args.batch_size,
@@ -449,7 +435,7 @@ def main(args):
             pin_memory=args.gpu,
         )
 
-    # extract batches from dataloader
+    # Extract batches from dataloader for better efficiency
     batches_1 = []
     for step, batch in enumerate(test_dataloader_1):
         print(f'Extracting test batches1: {step}')
@@ -460,19 +446,28 @@ def main(args):
         print(f'Extracting test batches2: {step}')
         batches_2.append(batch)
 
+    ####################################
+    ####################################
+    ####################################
 
-    # Neuron assignments and spike proportions.
+    # Number of classes in the dataset
     n_classes = 10
 
-    # Summary writer.
-    writer = SummaryWriter(log_dir=args.log_dir, flush_secs=60)
-
-    ##################################################################################
-    ##################################################################################
-
+    ####################################
     # ACC after fault injection
 
-    # set norm to None
+    # Take weight snapshot
+    network.connections[('X','Y')].weight_snapshot()
+    
+    # Apply weight decay
+    w = network.state_dict()["X_to_Y.w"]
+    healthy_mean_sum = w.sum(0).mean(0)
+    dr = decay_ratio(w.size(), args.t_norm, args.v_mean, args.v_sigma, args.gpu)
+    w = w * dr
+    w = w * network.connections[('X','Y')].weight_mask
+    network.state_dict()["X_to_Y.w"].data[:] = w
+
+    # Set norm to None
     norm_ori = network.connections[('X','Y')].norm
     network.connections[('X','Y')].norm = None
     
@@ -485,7 +480,7 @@ def main(args):
         spikes[layer] = Monitor(network.layers[layer], state_vars=["s"], time=args.test_time)
         network.add_monitor(spikes[layer], name="%s_spikes" % layer)
 
-    # test once
+    # Test once
     test_acc, assignments, _ = doOneAccuracyTest(network, 
                                 batches_1, 
                                 batches_2, 
@@ -494,14 +489,13 @@ def main(args):
                                 n_classes, 
                                 args.gpu)
     
+    # Save parameters if specified
     if args.network_param_save:
-        save_path_f = save_path + "After_fault_injection_{:.2f}.pt".format(test_acc)
+        save_path_f = save_path + "After_fault_injection_{:.2f}.wt".format(test_acc)
         print("After fault injection ACC : {:.2f}".format(test_acc))
         save_weight_theta(network, save_path_f)
 
-
-    ##################################################################################
-
+    ####################################
     # ACC after normalization
 
     # Normalization
@@ -510,7 +504,7 @@ def main(args):
     w = w / sum_w * 78.4
     network.state_dict()["X_to_Y.w"].data[:] = w
 
-    # test once
+    # Test once
     test_acc, assignments, _ = doOneAccuracyTest(network, 
                                 batches_1, 
                                 batches_2,
@@ -519,15 +513,16 @@ def main(args):
                                 n_classes, 
                                 args.gpu)
     
+    # Save parameters if specified
     if args.network_param_save:
-        save_path_f = save_path + "After_normalization_{:.2f}.pt".format(test_acc)
+        save_path_f = save_path + "After_normalization_{:.2f}.wt".format(test_acc)
         print("After normalization ACC : {:.2f}".format(test_acc))
         save_weight_theta(network, save_path_f)
 
-    # recover weight just after fault injection
+    # Recover weight just after fault injection
     network.state_dict()["X_to_Y.w"].data[:] = w / 78.4 * sum_w
 
-    # set norm to original value
+    # Set norm to original value
     network.connections[('X','Y')].norm = norm_ori
 
     # Re-enable learning.
@@ -539,15 +534,13 @@ def main(args):
         spikes[layer] = Monitor(network.layers[layer], state_vars=["s"], time=args.time)
         network.add_monitor(spikes[layer], name="%s_spikes" % layer)
 
-    ##################################################################################
-    ##################################################################################
-    ##################################################################################
-    ##################################################################################
-    ##################################################################################
-    ##################################################################################
+    ####################################
+    ####################################
+    ####################################
 
     # start of training
 
+    # Best accuracy recorder for entire self-repair process
     best_acc = 0
 
     for epoch in range(args.n_epochs):
@@ -557,15 +550,15 @@ def main(args):
             # Global step
             global_step = len(train_dataset_for_train) * epoch + args.batch_size * step
 
-            # weight equalization
+            # Weight equalization
             if args.eq_step > 0:
                 if step % args.eq_step == 0:
                     w = network.state_dict()["X_to_Y.w"]
-
                     sum_w = w.sum(0)
                     meansum_w = sum_w.mean(0)
                     w = w / sum_w * meansum_w
 
+                    # Raise weight sum to lowerbound if the weight sum is too low
                     if global_step == 0 and args.sum_lowerbound > 0:
                         sumlb = args.sum_lowerbound * healthy_mean_sum
                         if sumlb > meansum_w:
@@ -573,7 +566,8 @@ def main(args):
 
                     network.state_dict()["X_to_Y.w"].data[:] = w
 
-            # test if reaching update intervals  -----------------------------------------
+            ####################################
+            # Test accuracy once when reaching update intervals
             if step % args.update_steps == 0:
                 # Disable learning.
                 network.train(False)
@@ -584,11 +578,11 @@ def main(args):
                     spikes[layer] = Monitor(network.layers[layer], state_vars=["s"], time=args.test_time)
                     network.add_monitor(spikes[layer], name="%s_spikes" % layer)
 
-                # print weights sum mean
+                # Print weights sum mean
                 w1 = network.connections[('X','Y')].w
                 print("Mean of neuron-wide sum of weights : {}".format(w1.sum(0).mean().cpu().numpy()))
 
-                # test once
+                # Test once
                 test_acc, assignments, ave_spk = doOneAccuracyTest(network, 
                                             batches_1, 
                                             batches_2, 
@@ -602,10 +596,13 @@ def main(args):
                     if global_step != 0:
                         best_acc = test_acc
                     print("Test accuracy : {:.2f}".format(test_acc))
+
+                    # Save parameters if specified
                     if args.network_param_save:
                         save_path_f = save_path + "global_step_{}_test_acc_{:.2f}.wt".format(global_step, test_acc)
                         save_weight_theta(network, save_path_f)
 
+                # record accuracy and average number of spikes
                 recorder.write(str(global_step))
                 recorder.write(',')
                 recorder.write(f'{test_acc:.2f}')
@@ -620,11 +617,13 @@ def main(args):
                 for layer in set(network.layers):
                     spikes[layer] = Monitor(network.layers[layer], state_vars=["s"], time=args.time)
                     network.add_monitor(spikes[layer], name="%s_spikes" % layer)
-            # end test section --------------------------------------------------------
+            # End test section
+            ####################################
 
+            # Print information before each self-repair batch
             print(f"{run_id}    Epoch: {epoch}    Step: {step} / {len(train_dataloader)}", end = '')
 
-            # Prep next input batch.
+            # Prepare input batch spick train
             inpts = {"X": batch["encoded_image"]}
             if args.gpu:
                 inpts = {k: v.cuda() for k, v in inpts.items()}
@@ -632,18 +631,20 @@ def main(args):
             # Run the network
             network.run(inputs=inpts, time=args.time, one_step=args.one_step)
 
+            # Calculate the maximum number of spike amoung all neurons in this run
+            # If max # of spikes = 0, the network does not fire/learn at all.
             s = network.monitors['Y_spikes'].get("s").permute((1, 0, 2))
             maxspikecount = s.sum(0).max()
             print(f"  max # of spikes {maxspikecount.cpu().numpy()}")
 
-
             # Reset state variables.
             network.reset_state_variables()
 
+    ####################################
+    ####################################
+    ####################################
 
-
-
-    # save weights after the end of last epoch
+    # Save weights after the end of last epoch
     
     # Disable learning.
     network.train(False)
@@ -654,7 +655,7 @@ def main(args):
         spikes[layer] = Monitor(network.layers[layer], state_vars=["s"], time=args.test_time)
         network.add_monitor(spikes[layer], name="%s_spikes" % layer)
 
-    # test once
+    # Test once
     test_acc, assignments, ave_spk = doOneAccuracyTest(network, 
                                 batches_1, 
                                 batches_2,
@@ -663,10 +664,12 @@ def main(args):
                                 n_classes, 
                                 args.gpu)
     
+    # Save parameters if specified
     if args.network_param_save:
-        save_path_f = save_path + "global_step_{}_test_acc_{:.2f}.wt".format(global_step, test_acc)
+        save_path_f = save_path + "After_{:d}_epochs_of_self_repair_{:.2f}.wt".format(args.n_epochs, test_acc)
         save_weight_theta(network, save_path_f)
 
+    # record accuracy and average number of spikes
     recorder.write(str(global_step))
     recorder.write(',')
     recorder.write(f'{test_acc:.2f}')

@@ -1,21 +1,16 @@
 from abc import ABC
 from typing import Union, Optional, Sequence
-
 import torch
 import numpy as np
-
 from bindsnet.network.nodes import SRM0Nodes
 from bindsnet.utils import im2col_indices
-
 from bindsnet.network.topology import (
     AbstractConnection,
     Connection,
     Conv2dConnection,
     LocalConnection,
 )
-
 from bindsnet.learning.learning import LearningRule
-
 from A_STDP_topology import WeightMemorizingConnection
 
 class A_STDP_PostPre(LearningRule):
@@ -28,17 +23,7 @@ class A_STDP_PostPre(LearningRule):
         weight_decay: float = 0.0,
         **kwargs
     ) -> None:
-        # language=rst
-        """
-        Constructor for ``WeightDependentPostPre`` learning rule.
 
-        :param connection: An ``AbstractConnection`` object whose weights the
-            ``WeightDependentPostPre`` learning rule will modify.
-        :param nu: Single or pair of learning rates for pre- and post-synaptic events.
-        :param reduction: Method for reducing parameter updates along the batch
-            dimension.
-        :param weight_decay: Constant multiple to decay weights by on each iteration.
-        """
         super().__init__(
             connection=connection,
             nu=nu,
@@ -66,12 +51,6 @@ class A_STDP_PostPre(LearningRule):
         
         
     def _connection_update(self, **kwargs) -> None:
-        # language=rst
-        """
-        Post-pre learning rule for ``Connection`` subclass of ``AbstractConnection``
-        class.
-        """
-
 
         batch_size = self.source.batch_size
 
@@ -88,8 +67,8 @@ class A_STDP_PostPre(LearningRule):
 
         n_input = weight_original.size()[0]
         
-        # q: PR raising ratio. In astrocyte model, if a healthy PR is x before self repair
-        # it becomes q*x after self repair
+        # q: PR raising ratio. In astrocyte model, if a healthy PR is x0 before fault
+        # it should become q*x0 after self repair
         if self.connection.q is None:
             self.connection.q = 1.0 / (sum_healthy/sum_total)
             q = self.connection.q
