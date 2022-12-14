@@ -580,7 +580,7 @@ def main(args):
 
                 # Print weights sum mean
                 w1 = network.connections[('X','Y')].w
-                print("Mean of neuron-wide sum of weights : {}".format(w1.sum(0).mean().cpu().numpy()))
+                print("Mean of neuron-wide sum of weights : {:.2f}".format(w1.sum(0).mean().cpu().numpy()))
 
                 # Test once
                 test_acc, assignments, ave_spk = doOneAccuracyTest(network, 
