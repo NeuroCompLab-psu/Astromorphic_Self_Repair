@@ -202,7 +202,7 @@ def main(args):
     
     if (args.dataset != "MNIST") and (args.dataset != "FMNIST"):
         print("dataset is {}".format(args.dataset))
-        raise ArgumentError("dataset must be MNIST or FMNIST!")
+        raise ValueError("dataset must be MNIST or FMNIST!")
     
     args.log_dir += "/data_{}_pf_{}_vfau_({},{})_tfau_{}_tau_{}_eqs_{}_sumlo_{}_n_{}_dt_{}_t_{}_bs_{}_inh_{}_tplus_{}_int_{}_wm_{}_nu_({},{})_th_{}_sob_{}/". \
         format(
