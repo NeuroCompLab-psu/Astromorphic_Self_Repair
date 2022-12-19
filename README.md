@@ -87,7 +87,7 @@ python ./A_STDP_Self_Repair_main.py \
 [--seed]: Random number generator seed. It could be any numerical value. 
 [--update-steps]: After each "update-steps" batches, the script measure and record the accuracy of the network, including the weight map of the network. The smaller this value is, the more the time cost. If this value is too large, the highest accuracy will be missed. Default: 250
 [--network-param-save]: If this argument presents, the script saves the network weight and theta each time when the accuracy is measured.
-[--n-workers]: number of workers for dataloaders. This argument cannot be 0. The script uses 6 workers if this argument is set to -1.
+[--n-workers]: number of workers for dataloaders. This argument cannot be 0. The script uses 1 workers if this argument is set to -1.
 ```
 
 
