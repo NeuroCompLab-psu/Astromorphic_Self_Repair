@@ -177,7 +177,7 @@ def doOneAccuracyTest(
 def main(args):
     update_interval = args.update_steps * args.batch_size
 
-    # Sets up GPU use
+    # Setup seed
     torch.backends.cudnn.benchmark = False
     if args.gpu and torch.cuda.is_available():
         torch.cuda.manual_seed_all(args.seed)
@@ -191,7 +191,7 @@ def main(args):
     n_sqrt = int(np.ceil(np.sqrt(args.n_neurons)))
 
     # Global Argument Declear
-    reduction = "sum"
+    reduction = torch.sum
     one_step = False
     
     if (args.dataset != "MNIST") and (args.dataset != "FMNIST"):
