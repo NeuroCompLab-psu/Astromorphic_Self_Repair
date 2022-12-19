@@ -190,13 +190,9 @@ def main(args):
 
     n_sqrt = int(np.ceil(np.sqrt(args.n_neurons)))
 
-    # Argument checking
-    if args.reduction == "sum":
-        reduction = torch.sum
-    elif args.reduction == "mean":
-        reduction = torch.mean
-    else:
-        raise NotImplementedError
+    # Global Argument Declear
+    reduction == "sum"
+    one_step = False
     
     if (args.dataset != "MNIST") and (args.dataset != "FMNIST"):
         print("dataset is {}".format(args.dataset))
@@ -485,7 +481,7 @@ def main(args):
                                 batches_1, 
                                 batches_2, 
                                 args.test_time,
-                                args.one_step, 
+                                one_step, 
                                 n_classes, 
                                 args.gpu)
     
@@ -509,7 +505,7 @@ def main(args):
                                 batches_1, 
                                 batches_2,
                                 args.test_time,
-                                args.one_step, 
+                                one_step, 
                                 n_classes, 
                                 args.gpu)
     
@@ -587,7 +583,7 @@ def main(args):
                                             batches_1, 
                                             batches_2, 
                                             args.test_time,
-                                            args.one_step, 
+                                            one_step, 
                                             n_classes, 
                                             args.gpu)
 
@@ -629,7 +625,7 @@ def main(args):
                 inpts = {k: v.cuda() for k, v in inpts.items()}
 
             # Run the network
-            network.run(inputs=inpts, time=args.time, one_step=args.one_step)
+            network.run(inputs=inpts, time=args.time, one_step=one_step)
 
             # Calculate the maximum number of spike amoung all neurons in this run
             # If max # of spikes = 0, the network does not fire/learn at all.
@@ -660,7 +656,7 @@ def main(args):
                                 batches_1, 
                                 batches_2,
                                 args.test_time,
-                                args.one_step, 
+                                one_step, 
                                 n_classes, 
                                 args.gpu)
     
@@ -693,7 +689,6 @@ def parse_args():
     parser.add_argument("--test-batch-size", type=int, required=True)
     parser.add_argument("--dt", type=int, default=1.0)
     parser.add_argument("--seed", type=int, default=0)
-    parser.add_argument("--reduction", type=str, default="sum")
     parser.add_argument("--inh", type=float, required=True)
     parser.add_argument("--theta-plus", type=float, required=True)
     parser.add_argument("--tc-theta-decay", type=float, required=True)
@@ -703,7 +698,6 @@ def parse_args():
     parser.add_argument("--nu-post", type=float, required=True)
     parser.add_argument("--thresh", type=float, required=True)
     parser.add_argument("--sobel", action="store_true")
-    parser.add_argument("--one-step", action="store_true")
 
     # Fault arguments
     parser.add_argument("--pfault", type=float, required=True)
