@@ -186,7 +186,7 @@ def main(args):
 
     # Determines number of workers to use
     if args.n_workers == -1:
-        args.n_workers = args.gpu * 6 * torch.cuda.device_count()
+        args.n_workers = args.gpu * 1 * torch.cuda.device_count()
 
     n_sqrt = int(np.ceil(np.sqrt(args.n_neurons)))
 
