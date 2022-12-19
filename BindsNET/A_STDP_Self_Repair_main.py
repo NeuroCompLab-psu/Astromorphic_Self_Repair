@@ -191,7 +191,7 @@ def main(args):
     n_sqrt = int(np.ceil(np.sqrt(args.n_neurons)))
 
     # Global Argument Declear
-    reduction == "sum"
+    reduction = "sum"
     one_step = False
     
     if (args.dataset != "MNIST") and (args.dataset != "FMNIST"):
