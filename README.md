@@ -90,5 +90,21 @@ python ./A_STDP_Self_Repair_main.py \
 [--n-workers]: number of workers for dataloaders. This argument cannot be 0. The script uses torch.cuda.device_count() workers if this argument is set to -1 or not present.
 ```
 
+## Reference
+Please cite this code with the following bibliography:
 
+Zhuangyu Han, A. N. M. Nafiul Islam, Abhronil Sengupta, “Astromorphic Self-Repair of Neuromorphic Hardware Systems“, AAAI Conference on Artificial Intelligence (AAAI), 2023
+
+```
+@article{https://doi.org/10.48550/arxiv.2209.07428,
+  doi = {10.48550/ARXIV.2209.07428},
+  url = {https://arxiv.org/abs/2209.07428},
+  author = {Han, Zhuangyu and Islam, A N M Nafiul and Sengupta, Abhronil},
+  keywords = {Neural and Evolutionary Computing (cs.NE), FOS: Computer and information sciences, FOS: Computer and information sciences},
+  title = {Astromorphic Self-Repair of Neuromorphic Hardware Systems},
+  publisher = {arXiv},
+  year = {2022},
+  copyright = {Creative Commons Attribution 4.0 International}
+}
+```
 
