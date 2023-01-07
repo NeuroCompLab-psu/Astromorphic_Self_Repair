@@ -57,7 +57,7 @@ python ./A_STDP_Self_Repair_main.py \
 ### Parameter interpretation and default(optimal) values
 
 ```
---network-file-load: The path to the uncorrupted weights and theta (readers are referred to [Diehl and Cook 2015](https://doi.org/10.3389/fncom.2015.00099) for the definition of theta) of the network. A weight mask will be applied to the healthy weight map for generating a faulty weight map, in the script. Example: ./uncorrupted_MNIST.wt
+--network-file-load: The path to the uncorrupted weights and theta** of the network. A weight mask will be applied to the healthy weight map for generating a faulty weight map, in the script. Example: ./uncorrupted_MNIST.wt
 --dataset: Specifying the dataset. This argument can only be "MNIST" or "FMNIST".
 --n-neurons: Number of neurons in the output layer of the network. Default: 400(MNIST and Fashion MNIST)
 --time: The training time duration for the network per image. Default: 100
@@ -89,6 +89,8 @@ python ./A_STDP_Self_Repair_main.py \
 [--network-param-save]: If this argument is present, the script saves the network weights and theta every time the accuracy is measured.
 [--n-workers]: number of workers for dataloaders. This argument cannot be 0. The script uses torch.cuda.device_count() workers if this argument is set to -1 or not present.
 ```
+
+\* Readers are referred to [Diehl and Cook 2015](https://doi.org/10.3389/fncom.2015.00099) for the definition of theta.
 
 ## Reference
 Please cite this code with the following bibliography:
