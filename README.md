@@ -90,7 +90,7 @@ python ./A_STDP_Self_Repair_main.py \
 [--n-workers]: number of workers for dataloaders. This argument cannot be 0. The script uses torch.cuda.device_count() workers if this argument is set to -1 or not present.
 ```
 
-\* Readers are referred to [Diehl and Cook 2015](https://doi.org/10.3389/fncom.2015.00099) for the definition of theta.
+\*\* Readers are referred to [Diehl and Cook 2015](https://doi.org/10.3389/fncom.2015.00099) for the definition of theta.
 
 ## Reference
 Please cite this code with the following bibliography:
