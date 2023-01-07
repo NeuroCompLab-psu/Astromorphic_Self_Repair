@@ -2,7 +2,7 @@
 
 ## Overview
 
-This codebase contains a simulation of the astrocyte-guided self-repair algorithm of the Spike-Timing-Dependent Plasticity (STDP) network running on neuromorphic hardware. The astromorphic STDP self-repair learning rule is extracted from the dynamics of interaction between a group of neurons and a neighboring astrocyte. When there are faults, for example, weight decay or conductance stuck to zero, in the crossbar array system for an STDP network, the network accuracy will degenerate. The proposed algorithm can restore the system accuracy to a reasonable level based on the information remaining in the healthy synapses. Here the STDP network implementation is from [BindsNET](https://github.com/BindsNET/bindsnet).
+While neuromorphic computing architectures based on Spiking Neural Networks (SNNs) are increasingly gaining interest as a pathway toward bio-plausible machine learning, attention is still focused on computational units like the neuron and synapse. This codebase evaluates the self-repair role of glial cells, in particular, astrocytes, by developing macro-models with a higher degree of biofidelity that accurately captures the dynamic behavior of the self-repair process. Hardware-software co-design analysis reveals that bio-morphic astrocytic regulation has the potential to self-repair hardware realistic faults in neuromorphic hardware systems with significantly better accuracy and repair convergence for unsupervised learning tasks on the MNIST and F-MNIST datasets. The implementation is based on [BindsNET](https://github.com/BindsNET/bindsnet).
 
 ## Package Requiremnts
 
@@ -13,11 +13,11 @@ This codebase contains a simulation of the astrocyte-guided self-repair algorith
 
 ## Running a simulation
 
-The healthy weight sets for MNIST (**uncorrupted_MNIST.wt**) and Fashion MNIST (**uncorrupted_Fashion_MNIST.wt**) datasets are already prepared under the path "/BindsNET/".
+The uncorrupted weights for MNIST (**uncorrupted_MNIST.wt**) and Fashion MNIST (**uncorrupted_Fashion_MNIST.wt**) datasets are uploaded under the path "/BindsNET/".
 
-Run the script **A_STDP_Self_Repair_main.py** with the following formula:
+Run the script A_STDP_Self_Repair_main.py with the following arguments:
 
-### MNSIT Dataset
+### MNIST Dataset
 ```
 python ./A_STDP_Self_Repair_main.py \
 --network-file-load ./uncorrupted_MNIST.wt \
@@ -57,17 +57,17 @@ python ./A_STDP_Self_Repair_main.py \
 ### Parameter interpretation and default(optimal) values
 
 ```
---network-file-load: The path to the healthy weight and theta of a network. A weight mask will be applied to the healthy weight map for generating a faulty weight map, in the script. Example: ./uncorrupted_MNIST.wt
+--network-file-load: The path to the uncorrupted weights and theta (readers are referred to Diehl and Cook 2015 for the definition of theta) of the network. A weight mask will be applied to the healthy weight map for generating a faulty weight map, in the script. Example: ./uncorrupted_MNIST.wt
 --dataset: Specifying the dataset. This argument can only be "MNIST" or "FMNIST".
---n-neurons: Number of neurons in the output layer of the STDP network. Default: 400(MNIST and Fashion MNIST)
---time: The time duration for a single STDP network run in learning mode. Default: 100
---test-time: The time duration for a single STDP network run in inference mode. Default: 100
+--n-neurons: Number of neurons in the output layer of the network. Default: 400(MNIST and Fashion MNIST)
+--time: The training time duration for the network per image. Default: 100
+--test-time: The inference time duration for the network per image. Default: 100
 --batch-size: STDP batch size for re-training. Default: 16
 --test-batch-size: STDP batch size for inference. Default: 16
---inh: Lateral inhibitory synapse weight. Default: 120(MNIST), 250(Fashion MNIST)
---theta-plus: The increment of threshold per slike. Default: 0.05
+--inh: Lateral inhibitory synaptic weight. Default: 120(MNIST), 250(Fashion MNIST)
+--theta-plus: The increment of threshold per spike. Default: 0.05
 --tc-theta-decay: the decay time constant of theta. Default: 1e7
---intensity: The input poisson spike train rate to the input image pixel whose brightness is 1. Default: 128(MNIST), 45(Fashion MNIST)
+--intensity: The input Poisson spike train rate corresponding to the input image pixel whose brightness is 1. Default: 128(MNIST), 45(Fashion MNIST)
 --weight-max: Maximum possible weight for all synapses. Default: 1000
 --nu-pre: Pre-synaptic learning rate. Default: 1e-4(MNIST), 4e-5(Fashion MNIST)
 --nu-post: Post-synaptic learning rate. Default: 1e-2(MNIST), 4e-3(Fashion MNIST)
@@ -78,15 +78,15 @@ python ./A_STDP_Self_Repair_main.py \
 --v-sigma: Standard deviation of v in the Phase Change Memory (PCM) conductance decay model. Default: 0.2258
 --tau: Self-repair time constant. Default: 0.01(MNIST), 0.004(Fashion MNIST)
 --eq-step: After each "eq-step" batches, a normalization is applied. E.g. "--eq-step 1" leads to normalization after each batch of STDP re-training, and "--eq-step 2" leads to normalization after each second batch. Default: 1
---sum-lowerbound: The lower bound of the ratio between remaining sum of weight and original sum of weights for each neuron. If all the neurons in a network are degenerated to a very severe extend, the output spike of a single learning batch will be 0, which will lead to failure of learning for STDP network. So all the neurons will have their sum of wneueight scaled to (sum-lowerbound)*(original sum of weight), if the mean of sum of weight for all the neurons is lower than (sum-lowerbound)*(original sum of weight). Default: 0.17(MNSIT), 0.22(Fashion MNIST)
---n-epochs: Number of epochs of STDP re-training. 2 epochs is recommanded for both datasets. 
+--sum-lowerbound: The lower bound of the ratio between remaining sum of weights and original sum of weights for each neuron. If all the neurons in a network are degenerated to a very severe extent, the output spike of a single learning batch will be 0, which will lead to failure of learning for the network. So all the neurons will have their sum of weights clipped to (sum-lowerbound)*(original sum of weights), if the mean of the sum of weights for all the neurons in the network is lower than (sum-lowerbound)*(original sum of weights). Default: 0.17(MNSIT), 0.22(Fashion MNIST)
+--n-epochs: Number of epochs of STDP re-training. 2 epochs is recommended for both datasets. 
 --log-dir: Path for simulation log. 
 [--gpu]: Whether to use GPU for tranining. 
-[--sobel]: Whether to use sobel filter to process the input image for edge detection. The script uses sobel filter if this argument presents. Default: Do not use sobel for MNIST dataset, and use sobel for Fashion MNIST dataset.
+[--sobel]: Whether to use Sobel filter to process the input image for edge detection. The script uses Sobel filter if this argument is present. Default: Do not use sobel for MNIST dataset, and use sobel for Fashion MNIST dataset.
 [--dt]: Simulation step size. Default: 1
 [--seed]: Random number generator seed. It could be any numerical value. 
 [--update-steps]: After each "update-steps" batches, the script measure and record the accuracy of the network, including the weight map of the network. The smaller this value is, the more the time cost. If this value is too large, the highest accuracy will be missed. Default: 250
-[--network-param-save]: If this argument presents, the script saves the network weight and theta each time when the accuracy is measured.
+[--network-param-save]: If this argument is present, the script saves the network weights and theta every time the accuracy is measured.
 [--n-workers]: number of workers for dataloaders. This argument cannot be 0. The script uses torch.cuda.device_count() workers if this argument is set to -1 or not present.
 ```
 
