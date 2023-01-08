@@ -57,7 +57,7 @@ python ./A_STDP_Self_Repair_main.py \
 ### Parameter interpretation and default(optimal) values
 
 ```
---network-file-load: The path to the uncorrupted weights and theta** of the network. A weight mask will be applied to the healthy weight map for generating a faulty weight map, in the script. Example: ./uncorrupted_MNIST.wt
+--network-file-load: The path to the uncorrupted weights and theta(adaptive threshold increment)** of the network. A weight mask will be applied to the healthy weight map for generating a faulty weight map, in the script. Example: ./uncorrupted_MNIST.wt
 --dataset: Specifying the dataset. This argument can only be "MNIST" or "FMNIST".
 --n-neurons: Number of neurons in the output layer of the network. Default: 400(MNIST and Fashion MNIST)
 --time: The training time duration for the network per image. Default: 100
