@@ -57,7 +57,7 @@ python ./A_STDP_Self_Repair_main.py \
 ### Parameter interpretation and default(optimal) values
 
 ```
---network-file-load: The path to the uncorrupted weights and theta(adaptive threshold increment)** of the network. A weight mask will be applied to the healthy weight map for generating a faulty weight map, in the script. Example: ./uncorrupted_MNIST.wt
+--network-file-load: The path to the uncorrupted weights and thetas(adaptive threshold increment) of the network. A weight mask will be applied to the healthy weight map for generating a faulty weight map, in the script. Example: ./uncorrupted_MNIST.wt
 --dataset: Specifying the dataset. This argument can only be "MNIST" or "FMNIST".
 --n-neurons: Number of neurons in the output layer of the network. Default: 400(MNIST and Fashion MNIST)
 --time: The training time duration for the network per image. Default: 100
@@ -65,8 +65,8 @@ python ./A_STDP_Self_Repair_main.py \
 --batch-size: STDP batch size for re-training. Default: 16
 --test-batch-size: STDP batch size for inference. Default: 16
 --inh: Lateral inhibitory synaptic weight. Default: 120(MNIST), 250(Fashion MNIST)
---theta-plus: The increment of threshold per spike. Default: 0.05
---tc-theta-decay: the decay time constant of theta. Default: 1e7
+--theta-plus: The increment of theta per spike. Default: 0.05
+--tc-theta-decay: the decay time constant of thetas. Default: 1e7
 --intensity: The input Poisson spike train rate corresponding to the input image pixel whose brightness is 1. Default: 128(MNIST), 45(Fashion MNIST)
 --weight-max: Maximum possible weight for all synapses. Default: 1000
 --nu-pre: Pre-synaptic learning rate. Default: 1e-4(MNIST), 4e-5(Fashion MNIST)
@@ -78,7 +78,7 @@ python ./A_STDP_Self_Repair_main.py \
 --v-sigma: Standard deviation of v in the Phase Change Memory (PCM) conductance decay model. Default: 0.2258
 --tau: Self-repair time constant. Default: 0.01(MNIST), 0.004(Fashion MNIST)
 --eq-step: After each "eq-step" batches, a normalization is applied. E.g. "--eq-step 1" leads to normalization after each batch of STDP re-training, and "--eq-step 2" leads to normalization after each second batch. Default: 1
---sum-lowerbound: The lower bound of the ratio between remaining sum of weights and original sum of weights for each neuron. If all the neurons in a network are degenerated to a very severe extent, the output spike of a single learning batch will be 0, which will lead to failure of learning for the network. So all the neurons will have their sum of weights clipped to (sum-lowerbound)*(original sum of weights), if the mean of the sum of weights for all the neurons in the network is lower than (sum-lowerbound)*(original sum of weights). Default: 0.17(MNSIT), 0.22(Fashion MNIST)
+--sum-lowerbound: The lower bound of the ratio between remaining sum of weights and original sum of weights for each neuron. If all the neurons in a network are degenerated to a very severe extent, the output spike of a single learning batch will be 0, which will lead to failure of learning for the network. So all the neurons will have their sum of weights clipped to (sum-lowerbound)*(original sum of weights), if the mean of the sum of weights for all the neurons in the network is lower than (sum-lowerbound)*(original sum of weights). Default: 0.17(MNIST), 0.22(Fashion MNIST)
 --n-epochs: Number of epochs of STDP re-training. 2 epochs is recommended for both datasets. 
 --log-dir: Path for simulation log. 
 [--gpu]: Whether to use GPU for tranining. 
@@ -86,11 +86,9 @@ python ./A_STDP_Self_Repair_main.py \
 [--dt]: Simulation step size. Default: 1
 [--seed]: Random number generator seed. It could be any numerical value. 
 [--update-steps]: After each "update-steps" batches, the script measure and record the accuracy of the network, including the weight map of the network. The smaller this value is, the more the time cost. If this value is too large, the highest accuracy will be missed. Default: 250
-[--network-param-save]: If this argument is present, the script saves the network weights and theta every time the accuracy is measured.
+[--network-param-save]: If this argument is present, the script saves the network weights and thetas every time the accuracy is measured.
 [--n-workers]: number of workers for dataloaders. This argument cannot be 0. The script uses torch.cuda.device_count() workers if this argument is set to -1 or not present.
 ```
-
-\*\* Readers are referred to [Diehl and Cook 2015](https://doi.org/10.3389/fncom.2015.00099) for the definition of theta.
 
 ## Reference
 Please cite this code with the following bibliography:
