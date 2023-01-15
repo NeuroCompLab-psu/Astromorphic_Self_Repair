@@ -4,7 +4,7 @@
 
 While neuromorphic computing architectures based on Spiking Neural Networks (SNNs) are increasingly gaining interest as a pathway toward bio-plausible machine learning, attention is still focused on computational units like the neuron and synapse. This codebase evaluates the self-repair role of glial cells, in particular, astrocytes, by developing macro-models with a higher degree of biofidelity that accurately captures the dynamic behavior of the self-repair process. Hardware-software co-design analysis reveals that bio-morphic astrocytic regulation has the potential to self-repair hardware realistic faults in neuromorphic hardware systems with significantly better accuracy and repair convergence for unsupervised learning tasks on the MNIST and F-MNIST datasets. The implementation is based on [BindsNET](https://github.com/BindsNET/bindsnet).
 
-## Package Requiremnts
+## Package Requirements
 
 - Python >= 3.8
 - Pytorch 1.13.0 (with CUDA 11.6 and torchvision)
@@ -81,7 +81,7 @@ python ./A_STDP_Self_Repair_main.py \
 --sum-lowerbound: The lower bound of the ratio between remaining sum of weights and original sum of weights for each neuron. If all the neurons in a network are degenerated to a very severe extent, the output spike of a single learning batch will be 0, which will lead to failure of learning for the network. So all the neurons will have their sum of weights clipped to (sum-lowerbound)*(original sum of weights), if the mean of the sum of weights for all the neurons in the network is lower than (sum-lowerbound)*(original sum of weights). Default: 0.17(MNIST), 0.22(Fashion MNIST)
 --n-epochs: Number of epochs of STDP re-training. 2 epochs is recommended for both datasets. 
 --log-dir: Path for simulation log. 
-[--gpu]: Whether to use GPU for tranining. 
+[--gpu]: Whether to use GPU for training. 
 [--sobel]: Whether to use Sobel filter to process the input image for edge detection. The script uses Sobel filter if this argument is present. Default: Do not use sobel for MNIST dataset, and use sobel for Fashion MNIST dataset.
 [--dt]: Simulation step size. Default: 1
 [--seed]: Random number generator seed. It could be any numerical value. 
